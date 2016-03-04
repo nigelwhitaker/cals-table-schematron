@@ -6,4 +6,6 @@ CALS tables are used in various documentation systems/standards (such as Docbook
 
 This code uses schematron to automate the checking of the semantic rules/constraints. There may be other uses beyond semantic checking when doing more general table processing.
 
+Please also see the following blog posting:  http://blogs.deltaxml.com/2013/08/08/cals-table-validity/
+
 (Automatically exported from code.google.com/p/cals-table-schematron)
