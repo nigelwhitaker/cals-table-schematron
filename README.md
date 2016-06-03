@@ -8,4 +8,6 @@ This code uses schematron to automate the checking of the semantic rules/constra
 
 Please also see the following blog posting:  http://blogs.deltaxml.com/2013/08/08/cals-table-validity/
 
+The xslt3 files (xsl and sch) will be discussed at an XMLLondon 2016 presentation.  They do not yet work with the Schematron validator that is part of oXygenXML 18.0.
+
 (Automatically exported from code.google.com/p/cals-table-schematron)
