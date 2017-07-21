@@ -19,6 +19,7 @@
   <ns prefix="cals" uri="http://www.deltaxml.com/ns/cals-table"/>
   <ns prefix="saxon" uri="http://saxon.sf.net/" />
   <ns prefix="functx" uri="http://www.functx.com" />
+  <ns prefix="xs" uri="http://www.w3.org/2001/XMLSchema"/>
   <xsl:include xmlns:xsl="http://www.w3.org/1999/XSL/Transform" href="cals-table-functions.xsl" />
   <xsl:include xmlns:xsl="http://www.w3.org/1999/XSL/Transform" href="cals-constraints.xsl" />
 
