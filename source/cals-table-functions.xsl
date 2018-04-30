@@ -93,7 +93,7 @@
     <xd:return>It's position or index</xd:return>
   </xd:doc>
   <xsl:function name="cals:colnum" as="xs:integer">
-    <xsl:param name="col" as="element()"/> <!-- element is a colspec -->
+    <xsl:param name="col"/> <!-- element is a colspec -->
     <xsl:sequence select="if (exists($col/@colnum)) then $col/@colnum else 
       if ($col/preceding-sibling::*:colspec) then cals:colnum($col/preceding-sibling::*:colspec[1]) + 1 else 1"/>
   </xsl:function>
