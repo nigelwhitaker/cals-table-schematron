@@ -67,17 +67,17 @@
       <xsl:when test="$elem/parent::*:row/parent::*[self::*:thead or self::*:tfoot]/*:colspec">
         <!-- if an entry is in the context of a head/foot and that head/foot contains at least
           one colspec then all references are to that context, not the outer name space -->
-        <xsl:sequence select="$elem/../../*:colspec[@colname=$attr]"/>
+        <xsl:sequence select="($elem/../../*:colspec[@colname=$attr])[1]"/>
       </xsl:when>
       <!-- if the attr is colname, namest or nameend, it is referring to a colspec 
         the relevant colspec is in the nearest tgroup or entrytbl -->
       <xsl:when test="name($attr) = ('colname', 'namest', 'nameend')">
-        <xsl:sequence select="$elem/ancestor::*[self::*:tgroup or self::*:entrytbl][1]/*:colspec[@colname=$attr]"/>
+        <xsl:sequence select="($elem/ancestor::*[self::*:tgroup or self::*:entrytbl][1]/*:colspec[@colname=$attr])[1]"/>
       </xsl:when>
       <!-- if the attr is spanname, it is referring to a spanspec 
         the relevant spanspec is in the nearest tgroup or entrytbl -->
       <xsl:when test="name($attr) eq 'spanname'">
-        <xsl:sequence select="$elem/ancestor::*[self::*:tgroup or self::*:entrytbl][1]/*:spanspec[@spanname=$attr]"/>
+        <xsl:sequence select="($elem/ancestor::*[self::*:tgroup or self::*:entrytbl][1]/*:spanspec[@spanname=$attr])[1]"/>
       </xsl:when>
       <xsl:otherwise>
         <xsl:sequence select="error(QName('deltaxml', 'e2'), concat('referencing error for ', name($attr)))"/>
