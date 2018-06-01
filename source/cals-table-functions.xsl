@@ -17,6 +17,21 @@
     </xd:desc>
   </xd:doc>
   
+  <!-- use xsl:mode only for Saxon9.8 and later - XSLT 3.0 spec change -->
+  <xsl:mode use-when="
+    let $major := 9 return
+    let $minor := 8 return 
+    let $saxon-version := tokenize(system-property('xsl:product-version'),' ')[2] return
+    let $version-numbers :=     
+    ( 
+      for $parts in tokenize($saxon-version,'\.') 
+        return for $pn in xs:integer($parts) return $pn
+    )
+    return
+    $version-numbers[1] ge $major and $version-numbers[2] ge $minor"
+    
+    use-accumulators="#all"/>
+  
   <xsl:accumulator name="table-spanning" as="map(xs:integer, xs:integer*)" initial-value="map{}">
     <xsl:accumulator-rule match="*:tgroup" phase="start" select="cals:generate-morerows-data(.)"/>
   </xsl:accumulator>
