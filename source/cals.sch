@@ -9,7 +9,7 @@
   <ns prefix="saxon" uri="http://saxon.sf.net/" />
   <ns prefix="functx" uri="http://www.functx.com" />
   <ns prefix="map" uri="http://www.w3.org/2005/xpath-functions/map"/>
-  <xsl:include xmlns:xsl="http://www.w3.org/1999/XSL/Transform" href="cals-table-functions-xslt3.xsl" />
+  <xsl:include xmlns:xsl="http://www.w3.org/1999/XSL/Transform" href="cals-table-functions.xsl" />
   <xsl:include xmlns:xsl="http://www.w3.org/1999/XSL/Transform" href="cals-constraints.xsl" />
 
   <xsl:function name="functx:value-intersect" as="xs:anyAtomicType*"
