@@ -42,11 +42,11 @@
 
   <pattern id="p-context">
     <rule context="*:thead">
-      <assert role="warning" test="not(exists(*:row/*:entry/@spanname))">Use of the spanname attribute in a thead (<value-of select="saxon:path()"/>) is not allowed CALS-T5R1</assert>
+      <assert role="warning" test="not(exists(*:row/*:entry/@spanname) and exists(*:colspec))">Use of the spanname attribute in a thead (<value-of select="saxon:path()"/>) is not allowed when local colspec elements are defined CALS-T5R1</assert>
     </rule>
     
     <rule context="*:tfoot">
-      <assert role="warning" test="not(exists(*:row/*:entry/@spanname))">Use of the spanname attribute in a tfoot (<value-of select="saxon:path()"/>) is not allowed CALS-T6R1</assert>
+      <assert role="warning" test="not(exists(*:row/*:entry/@spanname) and exists(*:colspec))">Use of the spanname attribute in a tfoot (<value-of select="saxon:path()"/>) is not allowed when local colspec elements are defined CALS-T6R1</assert>
     </rule>
     
     <rule context="*:tgroup">
