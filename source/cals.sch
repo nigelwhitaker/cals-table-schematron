@@ -50,6 +50,8 @@
     </rule>
     
     <rule context="*:tgroup">
+      <assert test="cals:colspec-range(.)">colnum values within ('<xsl:value-of
+        select="saxon:path()"/> must be in the range 1 to the number of colspecs CALS-T2R1C</assert>
       <assert test="if (@cols castable as xs:integer) then xs:integer(@cols) gt 0  else false()">The cols attribute is required on <xsl:value-of 
         select="saxon:path()"/> and its value must be an integer greater than zero CALS-1</assert>
       <assert test="count(distinct-values(*:colspec/@colname)) eq count(*:colspec/@colname)">The colnames of the colspecs in a tgroup (<xsl:value-of select="saxon:path()"/>) must be unique CALS-T10R4B</assert>
@@ -79,8 +81,6 @@
         select="saxon:path()"/> must be unique CALS-T2R1A</assert>
       <assert test="cals:ascending-colnum(.)">Colnums within <xsl:value-of
         select="saxon:path()"/> must be in ascending order left-to-right CALS-T2R1B</assert>
-      <assert test="cals:colspec-range(.)">colnum values within ('<xsl:value-of
-        select="saxon:path()"/> must be in the range 1 to the number of colspecs CALS-T2R1C</assert>
       <assert test="cals:cols-vs-colspecs(.)">colnum values must not exceed the value of the cols attribute of the enclosing tgroup or entrytbl ('<xsl:value-of
         select="saxon:path()"/>') CALS-T2R1D</assert>
     </rule>
