@@ -98,8 +98,8 @@
     <rule context="*:entry" >
       <xsl:variable name="row" as="element()" select="ancestor::*:row[1]"/>
       <xsl:variable name="table-data" as="map(xs:integer, xs:integer*)" select="$row/ancestor::*:tgroup[1]/accumulator-after('table-spanning')"/>
-      <xsl:variable name="row-number" as="xs:integer" select="$row/accumulator-after('row-number')"/>
-      <xsl:variable name="morerows" as="xs:integer*" select="$table-data($row-number)"/>
+      <xsl:variable name="row-number" as="xs:integer*" select="$row/accumulator-after('row-number')"/>
+      <xsl:variable name="morerows" as="xs:integer*" select="$table-data($row-number[1])"/>
       <assert test="every $e in following-sibling::*:entry
         satisfies empty(functx:value-intersect(cals:entry-to-columns(., $morerows), cals:entry-to-columns($e, $morerows)))">The <xsl:value-of select="saxon:path()"/> occupying column(s) (<xsl:value-of
           select="string-join(for $i in cals:entry-to-columns(., $morerows) return xs:string($i), ', ')"/>) overlaps some other entry or entries: <xsl:value-of
@@ -128,8 +128,8 @@
     <rule context="*:row">
       <let name="cols" value="ancestor::*[self::*:tgroup or self::*:entrytbl][1]/@cols" />
       <xsl:variable name="table-data" as="map(xs:integer, xs:integer*)" select="ancestor::*:tgroup[1]/accumulator-after('table-spanning')"/>
-      <xsl:variable name="row-numbe" as="xs:integer" select="accumulator-after('row-number')"/>
-      <xsl:variable name="morerows" as="xs:integer*" select="$table-data($row-numbe)"/>
+      <xsl:variable name="row-numbe" as="xs:integer*" select="accumulator-after('row-number')"/>
+      <xsl:variable name="morerows" as="xs:integer*" select="$table-data($row-numbe[1])"/>
       <xsl:variable name="occupied" select="for $e in *:entry return cals:entry-to-columns($e, $morerows)"
         as="xs:integer*" />
       <assert xml:space="default" test="if (exists($occupied)) then max($occupied) le xs:integer($cols) else true()">The number of occupied columns (<value-of 

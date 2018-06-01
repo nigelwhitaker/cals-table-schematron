@@ -174,9 +174,9 @@
   </xd:doc>
   <xsl:function name="cals:overlap2" as="xs:integer*">
     <xsl:param name="row" as="element()"/>
-    <xsl:variable name="row-num" as="xs:integer" select="$row/accumulator-after('row-number')"/>
+    <xsl:variable name="row-num" as="xs:integer*" select="$row/accumulator-after('row-number')"/>
     <xsl:variable name="table-data" as="map(xs:integer, xs:integer*)" select="$row/ancestor::*:tgroup[1]/accumulator-after('table-spanning')"/>
-    <xsl:variable name="row-data" as="xs:integer*" select="$table-data($row-num)"/>
+    <xsl:variable name="row-data" as="xs:integer*" select="$table-data($row-num[1])"/>
     <xsl:sequence select="for $i in 1 to count($row-data) return if ($row-data[$i] > 0) then $i else()"/>
   </xsl:function>
 
