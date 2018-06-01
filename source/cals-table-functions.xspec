@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?oxygen RNGSchema="file:/usr/local/java/xspec-v0.1/xspec.rnc" type="compact"?>
-<!-- Copyright 2011, 2013 DeltaXML Ltd.
+<!-- Copyright 2011, 2013, 2017, 2018 DeltaXML Ltd.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
   xmlns:deltaxml="http://www.deltaxml.com/ns/well-formed-delta-v1"
   xmlns:cals="http://www.deltaxml.com/ns/cals-table"
   xmlns:dxa="http://www.deltaxml.com/ns/non-namespaced-attribute"
-  version="22"
+  version="22" xslt-version="3.0"
   stylesheet="cals-table-functions.xsl">
   
   <x:param name="t1">
@@ -201,34 +201,6 @@
       <row> <entry/> <entry/> </row>
     </tgroup>
   </x:param>
-  <x:scenario label="the row distance for the same row">
-    <x:call function="cals:row-distance2">
-      <x:param select="$overlap2/row[1]"/>
-      <x:param select="$overlap2/row[1]"/>
-    </x:call>
-    <x:expect label="is zero" select="0"/>
-  </x:scenario>
-  <x:scenario label="the row distance for the adjacent rows">
-    <x:call function="cals:row-distance2">
-      <x:param select="$overlap2/row[1]"/>
-      <x:param select="$overlap2/row[2]"/>
-    </x:call>
-    <x:expect label="is one" select="1"/>
-  </x:scenario>
-  <x:scenario label="the row distance for swapped adjacent rows">
-    <x:call function="cals:row-distance2">
-      <x:param select="$overlap2/row[2]"/>
-      <x:param select="$overlap2/row[1]"/>
-    </x:call>
-    <x:expect label="is one" select="1"/>
-  </x:scenario>
-  <x:scenario label="the row distance for the end rows">
-    <x:call function="cals:row-distance2">
-      <x:param select="$overlap2/row[1]"/>
-      <x:param select="$overlap2/row[4]"/>
-    </x:call>
-    <x:expect label="is 3" select="3"/>
-  </x:scenario>
   <x:scenario label="when the previous rows middle entry overlaps">
     <x:call function="cals:overlap2">
       <x:param select="$overlap2/row[2]"/>
@@ -263,7 +235,7 @@
     </x:call>
     <x:expect label="the first row has no overlap" select="()"/>
   </x:scenario>
-  <x:scenario label="with a table with lots of overlap">
+  <x:scenario label="with a table with lots of overlap"> 
     <x:call function="cals:overlap2">
       <x:param select="$overlap3/row[2]"/>
     </x:call>
@@ -285,34 +257,34 @@
     <x:call function="cals:overlap2">
       <x:param select="$overlap3/row[5]"/>
     </x:call>
-    <x:expect label="the 5th row has (1, 2) overlap" select="(2,1)"/>
+    <x:expect label="the 5th row has (1, 2) overlap" select="(1,2)"/>
   </x:scenario>
   <x:scenario label="row[1]/entry[1]">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[1]/entry[1]"/> </x:call>
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[1]/entry[1]"/> <x:param select="array {0, 0, 0}"/> </x:call>
     <x:expect label="is colnum 1" select="1"/>
   </x:scenario>
   <x:scenario label="row[1]/entry[2]">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[1]/entry[2]"/> </x:call>
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[1]/entry[2]"/> <x:param select="array {0, 0, 0}"/> </x:call>
     <x:expect label="is colnum 2" select="2"/>
   </x:scenario>
   <x:scenario label="row[1]/entry[3]">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[1]/entry[3]"/> </x:call>
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[1]/entry[3]"/> <x:param select="array {0, 0, 0}"/> </x:call>
     <x:expect label="is colnum 3" select="3"/>
   </x:scenario>
-  <x:scenario label="row[2]/entry[1]">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[2]/entry[1]"/> </x:call>
+  <x:scenario label="row[2]/entry[1]" >
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[2]/entry[1]"/> <x:param select="array {0, 4, 0}"/> </x:call>
     <x:expect label="is colnum 1" select="1"/>
   </x:scenario>
   <x:scenario label="row[2]/entry[2]">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[2]/entry[2]"/> </x:call>
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[2]/entry[2]"/> <x:param select="array {0, 4, 0}"/> </x:call>
     <x:expect label="is colnum 3" select="3"/>
   </x:scenario>
   <x:scenario label="row[4]/entry[1]">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[4]/entry[1]"/> </x:call>
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[4]/entry[1]"/> <x:param select="array {0, 2, 1}"/> </x:call>
     <x:expect label="is colnum 1" select="1"/>
   </x:scenario>
   <x:scenario label="row[5]/entry[1]">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[5]/entry[1]"/> </x:call>
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap3/row[5]/entry[1]"/> <x:param select="array {1, 1, 0}"/> </x:call>
     <x:expect label="is colnum 3" select="3"/>
   </x:scenario>
   
@@ -350,24 +322,68 @@
     <x:expect label="the 4th row has () overlap" select="()"/>
   </x:scenario>
   <x:scenario label="row 1, col 1">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap4/row[1]/entry[1]"/> </x:call>
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap4/row[1]/entry[1]"/> <x:param select="array {0, 0, 0, 0}"/> </x:call>
     <x:expect label="is colnum 1" select="1"/>
   </x:scenario>
-  <x:scenario label="row 1, col 2">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap4/row[1]/entry[2]"/> </x:call>
+  <x:scenario label="row 1, col 2" >
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap4/row[1]/entry[2]"/> <x:param select="array {0, 0, 0, 0}"/> </x:call>
     <x:expect label="is colnum 2 and 3" select="(2,3)"/>
   </x:scenario>
   <x:scenario label="row 1, col 3">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap4/row[1]/entry[3]"/> </x:call>
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap4/row[1]/entry[3]"/> <x:param select="array {0, 0, 0, 0}"/> </x:call>
     <x:expect label="is colnum 4" select="4"/>
   </x:scenario>
   <x:scenario label="row 2, col 1">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap4/row[2]/entry[1]"/> </x:call>
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap4/row[2]/entry[1]"/> <x:param select="array {0, 4, 4, 0}"/> </x:call>
     <x:expect label="is colnum 1" select="1"/>
   </x:scenario>
   <x:scenario label="row 2, entry 2">
-    <x:call function="cals:entry-to-columns"> <x:param select="$overlap4/row[2]/entry[2]"/> </x:call>
+    <x:call function="cals:entry-to-columns"> <x:param select="$overlap4/row[2]/entry[2]"/> <x:param select="array {0, 4, 4, 0}"/> </x:call>
     <x:expect label="is colnum 4" select="4"/>
   </x:scenario>
+
   
+
+  <x:param name="badrefs">
+    <tgroup cols='4'>
+      <colspec colname='a'/> <colspec colname='b'/> <colspec colname='c'/> <colspec colname='d'/>
+      <row> <entry morerows='1'/> <entry namest='b' nameend='e' morerows='2'/> <entry/> </row>  <!-- e is bad reference -->
+      <row> <entry/> <entry/> </row>
+      <row> <entry/> <entry/> </row>
+      <row> <entry/> <entry/> <entry/> <entry/> </row>
+    </tgroup>
+  </x:param>
+
+  <x:scenario label="badrefs, row 1, col 1">
+    <x:call function="cals:entry-to-columns"> <x:param select="$badrefs/row[1]/entry[1]"/> <x:param select="array {0, 0, 0, 0}"/> </x:call>
+    <x:expect label="is colnum 1" select="1"/>
+  </x:scenario>
+  <x:scenario label="badrefs, row 1, col 2" >
+    <x:call function="cals:entry-to-columns"> <x:param select="$badrefs/row[1]/entry[2]"/> <x:param select="array {0, 0, 0, 0}"/> </x:call>
+    <x:expect label="is colnum 0 because of referencing failures" select="(0)"/>
+  </x:scenario>
+  <x:scenario label="badrefs, row 1, col 3">
+    <x:call function="cals:entry-to-columns"> <x:param select="$badrefs/row[1]/entry[3]"/> <x:param select="array {0, 0, 0, 0}"/> </x:call>
+    <x:expect label="is colnum 1 because of previous failures in this row" select="1"/> <!-- this is wrong because of previous failures -->
+  </x:scenario>
+  <x:scenario label="badrefs, r1, overlap2">
+    <x:call function="cals:overlap2">
+      <x:param select="$badrefs/row[2]"/>
+    </x:call>
+    <x:expect label="entry[1] is overlapped, but not entry[2] because of referencing errors" select="(1)"/>
+  </x:scenario>
+
+
+  <x:param name="badspanref">
+    <tgroup cols='4'>
+      <colspec colname='a'/> <colspec colname='b'/> <colspec colname='c'/> <colspec colname='d'/>
+      <row> <entry morerows='1'/> <entry spanname="bd" morerows='2'/> <entry/> </row>  <!-- bd is bad reference -->
+    </tgroup>
+  </x:param>
+  
+
+  <x:scenario label="badspanref, row 1, col 2" >
+    <x:call function="cals:entry-to-columns"> <x:param select="$badspanref/row[1]/entry[2]"/> <x:param select="array {0, 0, 0, 0}"/> </x:call>
+    <x:expect label="is colnum 0 because of spanspec referencing failures" select="(0)"/>
+  </x:scenario>
 </x:description>

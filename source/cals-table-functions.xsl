@@ -7,6 +7,7 @@
                 xmlns:cals="http://www.deltaxml.com/ns/cals-table"
                 xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl"
                 xmlns:map="http://www.w3.org/2005/xpath-functions/map"
+                xmlns:array="http://www.w3.org/2005/xpath-functions/array"
                 xmlns:saxon="http://saxon.sf.net/"
                 version="3.0" exclude-result-prefixes="#all">
 
@@ -32,16 +33,12 @@
     
     use-accumulators="#all"/>
   
-  <xsl:accumulator name="table-spanning" as="map(xs:integer, xs:integer*)" initial-value="map{}">
-    <xsl:accumulator-rule match="*:tgroup" phase="start" select="cals:generate-morerows-data(.)"/>
+  <xsl:accumulator name="morerows-current-value" as="array(xs:integer)*" initial-value="()">
+    <xsl:accumulator-rule match="*:tgroup|*:entrytbl" phase="start" select="(array { for $i in 1 to @cols return 0 }, $value)"/>
+    <xsl:accumulator-rule match="*:tgroup|*:entrytbl" phase="end" select="tail($value)"/>
+    <xsl:accumulator-rule match="*:row" phase="end" select="cals:update-row-array(., head($value)), tail($value)"/>
   </xsl:accumulator>
   
-  <xsl:accumulator name="row-number" as="xs:integer*" initial-value="()">
-    <xsl:accumulator-rule match="*:tgroup" phase="start" select="(0, $value)"/>
-    <xsl:accumulator-rule match="*:tgroup" phase="end" select="tail($value)"/>
-    <xsl:accumulator-rule match="*:row" select="head($value)+1, tail($value)"/>
-  </xsl:accumulator>
-
   <xd:doc>
     <xd:desc>
       <xd:p>Name dereferencing for cals attributes.</xd:p>
@@ -94,31 +91,35 @@
   <xd:doc>
     <xd:desc>
       <xd:p>Gives the columns occupied by an entry in terms of a sequence of integers corresponding to column positions</xd:p>
+      <xd:p>If there are any referencing problems a 0 is returned (columns are normally numbered from 1).</xd:p>
+      <!-- Related issue/comment: https://devtools.deltaxml.com/jira/browse/CORE-970?focusedCommentId=20303&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-20303 -->
     </xd:desc>
     <xd:param name="entry">A table entry or entrytbl</xd:param>
     <xd:return>The occupied column(s) as a sequence of one or more integers</xd:return>
   </xd:doc>
   <xsl:function name="cals:entry-to-columns" as="xs:integer+">
     <xsl:param name="entry" as="element()"/> <!-- *:entry or *:entrytbl -->
-    <xsl:param name="morerows" as="xs:integer*"/> <!-- one integer per col, where non-zero is overlap -->
+    <xsl:param name="morerows" as="array(xs:integer)"/> <!-- one integer per col, where non-zero is overlap -->
     <xsl:choose>
       <xsl:when test="$entry/@spanname">
         <!-- look up span -->  <!-- cant be in a thead or tfoot -->
-        <xsl:variable name="span" as="element()" select="cals:lookup($entry, $entry/@spanname)"/>
-        <xsl:variable name="fromCol" as="element()" select="cals:lookup($span, $span/@namest)"/>
-        <xsl:variable name="toCol" as="element()" select="cals:lookup($span, $span/@nameend)"/>
-        <xsl:sequence select="(cals:colnum($fromCol) to cals:colnum($toCol))"/>
+        <xsl:variable name="span" as="element()?" select="cals:lookup($entry, $entry/@spanname)"/>
+        <xsl:variable name="fromCol" as="element()?" select="if (exists($span)) then cals:lookup($span, $span/@namest) else ()"/>
+        <xsl:variable name="toCol" as="element()?" select="if (exists($span)) then cals:lookup($span, $span/@nameend) else ()"/>
+        <xsl:sequence select="if (exists($span) and exists($fromCol) and exists($toCol)) then (cals:colnum($fromCol) to cals:colnum($toCol)) else (0)"/>
       </xsl:when>
       <xsl:when test="$entry/@namest and $entry/@nameend">
-        <xsl:variable name="fromCol" as="element()" select="cals:lookup($entry, $entry/@namest)"/>
-        <xsl:variable name="toCol" as="element()" select="cals:lookup($entry, $entry/@nameend)"/>
-        <xsl:sequence select="(cals:colnum($fromCol) to cals:colnum($toCol))"/>
+        <xsl:variable name="fromCol" as="element()?" select="cals:lookup($entry, $entry/@namest)"/>
+        <xsl:variable name="toCol" as="element()?" select="cals:lookup($entry, $entry/@nameend)"/>
+        <xsl:sequence select="if (exists($fromCol) and exists($toCol)) then (cals:colnum($fromCol) to cals:colnum($toCol)) else (0)"/>
       </xsl:when>
       <xsl:when test="$entry/@namest">
-        <xsl:sequence select="(cals:colnum(cals:lookup($entry, $entry/@namest)))"/>
+        <xsl:variable name="fromCol" as="element()?" select="cals:lookup($entry, $entry/@namest)"/>
+        <xsl:sequence select="if (exists($fromCol)) then (cals:colnum($fromCol)) else (0)"/>
       </xsl:when>
       <xsl:when test="$entry/@colname">
-        <xsl:sequence select="(cals:colnum(cals:lookup($entry, $entry/@colname)))"/>
+        <xsl:variable name="col" as="element()?" select="cals:lookup($entry, $entry/@colname)"/>
+        <xsl:sequence select="if (exists($col)) then (cals:colnum($col)) else (0)"/>
       </xsl:when>
       <xsl:otherwise>
         <xsl:sequence select="cals:get-default-col-pos2($entry, $morerows)"/>
@@ -140,7 +141,7 @@
 
   <xsl:function name="cals:get-default-col-pos2" as="xs:integer">
     <xsl:param name="entry" as="element()"/> <!-- *:entry or *:entrytbl -->
-    <xsl:param name="morerows" as="xs:integer*"/> <!-- one integer per col, where non-zero is overlap -->
+    <xsl:param name="morerows" as="array(xs:integer)" />
     <!-- implict resolution -->
     <!-- what is col pos of last entry, add any morerows if they are adjacent, add 1-->
     <xsl:variable name="preceedingPos" as="xs:integer" 
@@ -151,13 +152,13 @@
       select="$preceedingPos + 1"/>
     <xsl:variable name="cols" as="xs:integer" select="$entry/ancestor::*[@cols][1]/@cols"/>
     <xsl:variable name="nonOverlaps" as="xs:integer*"
-      select="for $i in 1 to $cols return if ($morerows[$i] eq 0) then () else $i"/>
+      select="for $i in 1 to $cols return if ($morerows($i) eq 0) then $i else ()"/>
     <!-- nonOverlaps are the inverse of the overlaps - ie rows from above which do not have 
        a presence in the current row so if our candidate position is 'clear' we will use it, otherwise the next available position -->
     <xsl:variable name="nonOverlapsGECandidate" as="xs:integer*" select="$nonOverlaps[. ge $candidatePos]"/>
     <!-- if all the remaining possible positions are overlapped we're stuck - use cols+1 which is illegal as
           the result to pass out so that the calling code can report an error -->
-    <xsl:sequence select="if (count($nonOverlapsGECandidate) ge 1) then min($nonOverlapsGECandidate) else $cols+1"/>
+    <xsl:sequence select="if (empty($nonOverlaps) and $candidatePos le $cols) then $candidatePos else if (count($nonOverlapsGECandidate) ge 1) then min($nonOverlapsGECandidate) else $cols+1"/>
   </xsl:function>
 
   <xd:doc>
@@ -174,31 +175,21 @@
   </xd:doc>
   <xsl:function name="cals:overlap2" as="xs:integer*">
     <xsl:param name="row" as="element()"/>
-    <xsl:variable name="row-num" as="xs:integer*" select="$row/accumulator-after('row-number')"/>
-    <xsl:variable name="table-data" as="map(xs:integer, xs:integer*)" select="$row/ancestor::*:tgroup[1]/accumulator-after('table-spanning')"/>
-    <xsl:variable name="row-data" as="xs:integer*" select="$table-data($row-num[1])"/>
-    <xsl:sequence select="for $i in 1 to count($row-data) return if ($row-data[$i] > 0) then $i else()"/>
+    <xsl:variable name="row-data" as="array(xs:integer)" select="$row/accumulator-before('morerows-current-value')[1]"/>
+    <xsl:sequence select="for $i in 1 to array:size($row-data) return if ($row-data($i) > 0) then $i else ()"/>
   </xsl:function>
-
-
-  <xsl:function name="cals:generate-morerows-data" as="map(xs:integer, xs:integer*)">
-    <xsl:param name="tgroup" as="element()"/>
-    <xsl:iterate select="$tgroup/*:row">
-      <xsl:param name="frontier" select="for $i in 1 to $tgroup/@cols return 0" as="xs:integer*"/>
-      <xsl:param name="rf" as="map(xs:integer, xs:integer*)" select="map{}"/>
-      <xsl:on-completion select="$rf"/>
-      <xsl:variable name="rowmap" as="map(xs:integer, xs:integer)">
-        <xsl:map>
-          <xsl:for-each select="entry[@morerows]">
-            <xsl:variable name="coveredCols" as="xs:integer+" select="cals:entry-to-columns(., $frontier)"/>
-            <xsl:sequence select="map:merge(for $i in $coveredCols return map:entry($i, xs:integer(@morerows)))"/>
-          </xsl:for-each>
-        </xsl:map>
-      </xsl:variable>
-      <xsl:next-iteration>
-        <xsl:with-param name="frontier" select="for $i in 1 to count($frontier) return max(($frontier[$i]-1, $rowmap($i), 0))"/>
-        <xsl:with-param name="rf" select="map:merge(($rf, map:entry(count(preceding-sibling::*:row)+1, $frontier)))"/>
-      </xsl:next-iteration>
-    </xsl:iterate>
+  
+  <xsl:function name="cals:update-row-array" as="array(xs:integer)">
+    <xsl:param name="row" as="element()"/>
+    <xsl:param name="old-values" as="array(xs:integer)"/>
+    <xsl:variable name="rowmap" as="map(xs:integer, xs:integer)">
+      <xsl:map>
+        <xsl:for-each select="$row/*:entry[@morerows]">
+          <xsl:variable name="coveredCols" as="xs:integer+" select="cals:entry-to-columns(., $old-values)"/>
+          <xsl:sequence select="map:merge(for $i in $coveredCols return map:entry($i, xs:integer(@morerows)))"/>
+        </xsl:for-each>
+      </xsl:map>
+    </xsl:variable>
+    <xsl:sequence select="array { for $i in 1 to array:size($old-values) return max(($old-values($i)-1, $rowmap($i), 0)) }"/>
   </xsl:function>
 </xsl:stylesheet>
