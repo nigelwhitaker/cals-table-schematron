@@ -1,53 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2011, 2013 DeltaXML Ltd.
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.  -->
-
+<!-- Copyright 2010, 2012, 2013, 2016 DeltaXML Ltd.  All rights reserved. -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:deltaxml="http://www.deltaxml.com/ns/well-formed-delta-v1" 
                 xmlns:xs="http://www.w3.org/2001/XMLSchema" 
                 xmlns:dxa="http://www.deltaxml.com/ns/non-namespaced-attribute"
                 xmlns:cals="http://www.deltaxml.com/ns/cals-table"
                 xmlns:xd="http://www.oxygenxml.com/ns/doc/xsl"
-                version="2.0" exclude-result-prefixes="#all">
+                xmlns:map="http://www.w3.org/2005/xpath-functions/map"
+                xmlns:saxon="http://saxon.sf.net/"
+                version="3.0" exclude-result-prefixes="#all">
+
   <xd:doc scope="stylesheet">
     <xd:desc>
       <xd:p>This stylesheet defines functions related to CALS tables.</xd:p>
-      <xd:p>It is intended for inclusion by other filters and schematron that wish to make use of the functions.</xd:p>
+      <xd:p>It is intended for inclusion by other XSLT filters and also schematron.</xd:p>
     </xd:desc>
   </xd:doc>
-
   
-  <xd:doc>
-    <xd:desc>
-      <xd:p>Provides the distance between 2 rows (in the same table).</xd:p>
-      <xd:p>The same rows are distance 0.  Adjacent are distance 1 etc... 
-            For very long tables this is inefficient.  Performance could perhaps
-            be improved by keying (eg:  keying rows by position) or using <![CDATA[<<]]> or >> operators</xd:p>
-    </xd:desc>
-    <xd:param name="r1">One of the rows</xd:param>
-    <xd:param name="r2">and another</xd:param>
-    <xd:return>the distance bewteen the rows specified as params</xd:return>
-  </xd:doc>
-  <xsl:function name="cals:row-distance2" as="xs:integer">
-    <xsl:param name="r1" as="element()"/>
-    <xsl:param name="r2" as="element()"/>
-    <xsl:variable name="r1pos" as="xs:integer"
-      select="count($r1/preceding-sibling::*:row) +1"/>
-    <xsl:variable name="r2pos" as="xs:integer"
-      select="count($r2/preceding-sibling::*:row) +1"/>
-    <xsl:sequence select="abs($r1pos - $r2pos)"/>
-  </xsl:function>
+  <xsl:accumulator name="table-spanning" as="map(xs:integer, xs:integer*)" initial-value="map{}">
+    <xsl:accumulator-rule match="*:tgroup" phase="start" select="cals:generate-morerows-data(.)"/>
+  </xsl:accumulator>
+  
+  <xsl:accumulator name="row-number" as="xs:integer*" initial-value="()">
+    <xsl:accumulator-rule match="*:tgroup" phase="start" select="(0, $value)"/>
+    <xsl:accumulator-rule match="*:tgroup" phase="end" select="tail($value)"/>
+    <xsl:accumulator-rule match="*:row" select="head($value)+1, tail($value)"/>
+  </xsl:accumulator>
 
   <xd:doc>
     <xd:desc>
@@ -107,6 +85,7 @@
   </xd:doc>
   <xsl:function name="cals:entry-to-columns" as="xs:integer+">
     <xsl:param name="entry" as="element()"/> <!-- *:entry or *:entrytbl -->
+    <xsl:param name="morerows" as="xs:integer*"/> <!-- one integer per col, where non-zero is overlap -->
     <xsl:choose>
       <xsl:when test="$entry/@spanname">
         <!-- look up span -->  <!-- cant be in a thead or tfoot -->
@@ -127,7 +106,7 @@
         <xsl:sequence select="(cals:colnum(cals:lookup($entry, $entry/@colname)))"/>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:sequence select="cals:get-default-col-pos($entry)"/>
+        <xsl:sequence select="cals:get-default-col-pos2($entry, $morerows)"/>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:function>
@@ -143,21 +122,21 @@
     <xd:param name="entry">A table cell</xd:param>
     <xd:return>its default position</xd:return>
   </xd:doc>
-  <xsl:function name="cals:get-default-col-pos" as="xs:integer">
+
+  <xsl:function name="cals:get-default-col-pos2" as="xs:integer">
     <xsl:param name="entry" as="element()"/> <!-- *:entry or *:entrytbl -->
+    <xsl:param name="morerows" as="xs:integer*"/> <!-- one integer per col, where non-zero is overlap -->
     <!-- implict resolution -->
     <!-- what is col pos of last entry, add any morerows if they are adjacent, add 1-->
     <xsl:variable name="preceedingPos" as="xs:integer" 
       select="if ($entry/preceding-sibling::*[self::*:entry or self::*:entrytbl])
-      then max(cals:entry-to-columns($entry/preceding-sibling::*[self::*:entry or self::*:entrytbl][1]))
+      then max(cals:entry-to-columns($entry/preceding-sibling::*[self::*:entry or self::*:entrytbl][1], $morerows))
       else xs:integer(0)"/>
     <xsl:variable name="candidatePos" as="xs:integer"
       select="$preceedingPos + 1"/>
-    <xsl:variable name="overlaps" as="xs:integer*"
-      select="cals:overlap2($entry/ancestor::*:row[1])"/>
     <xsl:variable name="cols" as="xs:integer" select="$entry/ancestor::*[@cols][1]/@cols"/>
     <xsl:variable name="nonOverlaps" as="xs:integer*"
-      select="for $i in 1 to $cols return if ($i = $overlaps) then () else $i"/>
+      select="for $i in 1 to $cols return if ($morerows[$i] eq 0) then () else $i"/>
     <!-- nonOverlaps are the inverse of the overlaps - ie rows from above which do not have 
        a presence in the current row so if our candidate position is 'clear' we will use it, otherwise the next available position -->
     <xsl:variable name="nonOverlapsGECandidate" as="xs:integer*" select="$nonOverlaps[. ge $candidatePos]"/>
@@ -179,13 +158,32 @@
     <xd:return>A sequence of integers specifying which columns are spanned or 'infringed' from above</xd:return>
   </xd:doc>
   <xsl:function name="cals:overlap2" as="xs:integer*">
-    <xsl:param name="row" as="element()"/> 
-    <xsl:sequence 
-      select="for $r in $row/preceding-sibling::*:row,  
-                  $e in $r/*[@morerows] return
-                   if (xs:integer($e/@morerows) ge cals:row-distance2($r, $row)) then
-                     cals:entry-to-columns($e)
-                   else
-                     ()"/>
+    <xsl:param name="row" as="element()"/>
+    <xsl:variable name="row-num" as="xs:integer" select="$row/accumulator-after('row-number')"/>
+    <xsl:variable name="table-data" as="map(xs:integer, xs:integer*)" select="$row/ancestor::*:tgroup[1]/accumulator-after('table-spanning')"/>
+    <xsl:variable name="row-data" as="xs:integer*" select="$table-data($row-num)"/>
+    <xsl:sequence select="for $i in 1 to count($row-data) return if ($row-data[$i] > 0) then $i else()"/>
+  </xsl:function>
+
+
+  <xsl:function name="cals:generate-morerows-data" as="map(xs:integer, xs:integer*)">
+    <xsl:param name="tgroup" as="element()"/>
+    <xsl:iterate select="$tgroup/*:row">
+      <xsl:param name="frontier" select="for $i in 1 to $tgroup/@cols return 0" as="xs:integer*"/>
+      <xsl:param name="rf" as="map(xs:integer, xs:integer*)" select="map{}"/>
+      <xsl:on-completion select="$rf"/>
+      <xsl:variable name="rowmap" as="map(xs:integer, xs:integer)">
+        <xsl:map>
+          <xsl:for-each select="entry[@morerows]">
+            <xsl:variable name="coveredCols" as="xs:integer+" select="cals:entry-to-columns(., $frontier)"/>
+            <xsl:sequence select="map:merge(for $i in $coveredCols return map:entry($i, xs:integer(@morerows)))"/>
+          </xsl:for-each>
+        </xsl:map>
+      </xsl:variable>
+      <xsl:next-iteration>
+        <xsl:with-param name="frontier" select="for $i in 1 to count($frontier) return max(($frontier[$i]-1, $rowmap($i), 0))"/>
+        <xsl:with-param name="rf" select="map:merge(($rf, map:entry(count(preceding-sibling::*:row)+1, $frontier)))"/>
+      </xsl:next-iteration>
+    </xsl:iterate>
   </xsl:function>
 </xsl:stylesheet>
