@@ -85,7 +85,7 @@
         select="saxon:path()"/>') CALS-T2R1D</assert>
     </rule>
     <rule context="*:entry">
-      <assert test="if (exists(@namest) and exists(@nameend)) then 
+      <assert test="if (exists(@namest) and exists(@nameend) and cals:lookup(., @namest) and cals:lookup(., @nameend)) then
         cals:colnum(cals:lookup(., @namest)) lt cals:colnum(cals:lookup(., @nameend))
         else true()">In <xsl:value-of 
           select="saxon:path()"/> the column specified by the namest attribute (<xsl:value-of
